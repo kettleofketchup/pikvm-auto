@@ -37,6 +37,15 @@ def test_show_version(capsys: pytest.CaptureFixture) -> None:
     assert debug._get_version() in captured.out
 
 
+def test_info_subcommand_help(capsys: pytest.CaptureFixture) -> None:
+    """Info subcommand shows help with connection args."""
+    with pytest.raises(SystemExit):
+        main(["info", "-h"])
+    captured = capsys.readouterr()
+    assert "--host" in captured.out
+    assert "--password" in captured.out
+
+
 def test_show_debug_info(capsys: pytest.CaptureFixture) -> None:
     """Show debug information.
 
