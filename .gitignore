@@ -17,6 +17,15 @@
 /site/
 uv.lock
 
+# secrets
+.env
+
+# logs
+pikvm.log
+
+# plans
+docs/plans/
+
 # cache
 .cache/
 .pytest_cache/

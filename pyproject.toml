@@ -28,7 +28,10 @@ classifiers = [
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-dependencies = []
+dependencies = [
+    "pikvm-lib>=0.5.0",
+    "pydantic-settings>=2.13.1",
+]
 
 [project.urls]
 Homepage = "https://kettleofketchup.github.io/pikvm-auto"
