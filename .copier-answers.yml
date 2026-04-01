@@ -1,0 +1,19 @@
+# Changes here will be overwritten by Copier.
+_commit: 1.11.15
+_src_path: https://github.com/pawamoy/copier-uv.git
+author_email: kettleofketchup@gmail.com
+author_fullname: KettleOfKetchup
+author_username: kettleofketchup
+copyright_date: '2026'
+copyright_holder: KettleOfKetchup
+copyright_holder_email: kettleofketchup@gmail.com
+copyright_license: Apache-2.0
+project_description: pikvmautomation, library, and ansible modules
+project_name: pikvm-autop
+python_package_command_line_name: pikvm-auto
+python_package_distribution_name: pikvm-auto
+python_package_import_name: pikvm_auto
+repository_name: pikvm-auto
+repository_namespace: kettleofketchup
+repository_provider: github.com
+
