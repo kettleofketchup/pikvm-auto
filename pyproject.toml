@@ -44,7 +44,7 @@ Gitter = "https://gitter.im/pikvm-auto/community"
 Funding = "https://github.com/sponsors/kettleofketchup"
 
 [project.scripts]
-pikvm-auto = "pikvm_auto.cli:main"
+pikvm-auto = "pikvm_auto._internal.cli:main"
 
 [tool.pdm.version]
 source = "call"
