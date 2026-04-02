@@ -10,7 +10,7 @@ run *ARGS:
 
 # Run tests
 test *ARGS:
-    uv run pytest {{ ARGS }}
+    uv run pytest -c config/pytest.ini {{ ARGS }}
 
 # Run linter
 lint:
