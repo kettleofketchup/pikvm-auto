@@ -1,0 +1,16 @@
+namespace: kettleofketchup
+name: pikvm
+version: 1.0.0
+readme: README.md
+authors:
+  - "KettleOfKetchup <kettleofketchup@gmail.com>"
+description: Manage PiKVM KVM-over-IP devices — ISO lifecycle, power control, screen capture, and device facts
+license:
+  - Apache-2.0
+tags: [kvm, pikvm, remote_management, infrastructure, bare_metal]
+dependencies: {}
+repository: https://github.com/kettleofketchup/pikvm-auto
+build_ignore:
+  - "*.tar.gz"
+  - .github
+  - tests/integration/integration_config.yml

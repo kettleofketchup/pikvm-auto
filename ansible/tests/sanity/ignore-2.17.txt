@@ -1,0 +1,5 @@
+plugins/module_utils/pikvm_client.py import-3.11!skip
+plugins/modules/pikvm_info.py import-3.11!skip
+plugins/modules/pikvm_atx.py import-3.11!skip
+plugins/modules/pikvm_msd.py import-3.11!skip
+plugins/modules/pikvm_snapshot.py import-3.11!skip
