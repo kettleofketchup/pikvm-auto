@@ -132,3 +132,7 @@ class ScreenshotClient:
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_bytes(self.capture())
         return p
+
+    def capture_text(self) -> str:
+        """Capture the screen and return the OCR'd text."""
+        return self.capture(ocr=True).decode("utf-8", errors="replace")

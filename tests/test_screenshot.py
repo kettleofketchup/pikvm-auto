@@ -157,3 +157,23 @@ def test_capture_to_creates_parent_dirs(
         tmp_path / "nested/dir/snap.jpeg",
     )
     assert out.exists()
+
+
+def test_capture_text_uses_ocr(monkeypatch: pytest.MonkeyPatch) -> None:
+    """capture_text() requests ocr=true and decodes to str."""
+    captured: dict[str, object] = {}
+
+    def fake_get(_url: str, **kwargs: object) -> MagicMock:
+        captured.update(kwargs)
+        m = MagicMock(status_code=200)
+        m.content = b"Press F11 for Boot Menu"
+        return m
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.requests.get",
+        fake_get,
+    )
+
+    text = ScreenshotClient(_mock_pikvm()).capture_text()
+    assert text == "Press F11 for Boot Menu"
+    assert captured["params"]["ocr"] == "true"
