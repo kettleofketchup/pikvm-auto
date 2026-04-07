@@ -162,7 +162,6 @@ class HIDClient:
     """
 
     def __init__(self, pikvm: "PiKVM") -> None:
-        self._pk = pikvm
         self._headers = pikvm.headers
         self._base = f"{pikvm.schema}://{pikvm.hostname}"
         self._verify = pikvm.certificate_trusted
