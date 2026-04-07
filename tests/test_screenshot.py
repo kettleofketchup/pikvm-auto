@@ -245,6 +245,31 @@ def test_wait_for_text_rejects_empty_expected() -> None:
         ScreenshotClient(pk).wait_for_text("")
 
 
+def test_wait_for_text_rejects_out_of_range_threshold() -> None:
+    """wait_for_text() rejects threshold outside [0.0, 1.0]."""
+    pk = _mock_pikvm()
+    with pytest.raises(ValueError, match=r"threshold must be in"):
+        ScreenshotClient(pk).wait_for_text("Boot", threshold=1.5)
+    with pytest.raises(ValueError, match=r"threshold must be in"):
+        ScreenshotClient(pk).wait_for_text("Boot", threshold=-0.1)
+
+
+def test_wait_for_text_rejects_negative_timeout() -> None:
+    """wait_for_text() rejects negative timeout."""
+    pk = _mock_pikvm()
+    with pytest.raises(ValueError, match=r"timeout.*non-negative"):
+        ScreenshotClient(pk).wait_for_text("Boot", timeout=-1.0)
+
+
+def test_wait_for_text_rejects_non_positive_interval() -> None:
+    """wait_for_text() rejects zero or negative interval."""
+    pk = _mock_pikvm()
+    with pytest.raises(ValueError, match=r"interval must be positive"):
+        ScreenshotClient(pk).wait_for_text("Boot", interval=0)
+    with pytest.raises(ValueError, match=r"interval must be positive"):
+        ScreenshotClient(pk).wait_for_text("Boot", interval=-0.5)
+
+
 def test_wait_for_text_saves_captures(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

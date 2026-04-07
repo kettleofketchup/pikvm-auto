@@ -159,6 +159,12 @@ class ScreenshotClient:
         """
         if not expected:
             raise ValueError("wait_for_text() requires non-empty expected text")
+        if not 0.0 <= threshold <= 1.0:
+            raise ValueError(f"threshold must be in [0.0, 1.0], got {threshold}")
+        if timeout < 0:
+            raise ValueError(f"timeout must be non-negative, got {timeout}")
+        if interval <= 0:
+            raise ValueError(f"interval must be positive, got {interval}")
         start = time.monotonic()
         deadline = start + timeout
         captures: list[Path] = []
