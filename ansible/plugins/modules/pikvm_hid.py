@@ -100,8 +100,17 @@ def main():
             raw_actions = [{"kind": "key", "key": module.params["key"]}]
         elif module.params["shortcut"]:
             raw_actions = [{"kind": "shortcut", "keys": module.params["shortcut"]}]
-        elif module.params["text"] is not None:
+        elif module.params["text"]:
             raw_actions = [{"kind": "text", "text": module.params["text"]}]
+
+    # Boundary validation: reject empty or missing input
+    if raw_actions is None or len(raw_actions) == 0:
+        module.fail_json(
+            msg=(
+                "pikvm_hid requires one of: non-empty 'actions', non-empty 'key', "
+                "non-empty 'shortcut', or non-empty 'text'"
+            )
+        )
 
     if module.check_mode:
         module.exit_json(changed=False, actions_sent=len(raw_actions))
