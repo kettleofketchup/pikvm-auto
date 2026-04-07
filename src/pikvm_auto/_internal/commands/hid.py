@@ -25,8 +25,14 @@ pass the canonical name directly (``ControlRight``, ``AltRight``,
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import TYPE_CHECKING, Literal, Optional
+
+import requests
+
+if TYPE_CHECKING:
+    from pikvm_lib.pikvm import PiKVM
 
 
 @dataclass
@@ -146,3 +152,40 @@ def canonical_key(key: str) -> str:
         return key
 
     raise ValueError(f"unknown key: {key!r}")
+
+
+class HIDClient:
+    """High-level HID input client for PiKVM.
+
+    Reads ``headers``, ``hostname``, ``schema``, and ``certificate_trusted``
+    from the passed ``PiKVM`` instance and calls the module-level
+    ``requests.post`` directly (matching pikvm-lib's own pattern — see module
+    docstring).
+    """
+
+    def __init__(self, pikvm: "PiKVM") -> None:
+        self._pk = pikvm
+        self._headers = pikvm.headers
+        self._base = f"{pikvm.schema}://{pikvm.hostname}"
+        self._verify = pikvm.certificate_trusted
+
+    def _send_key(self, code: str, state: str) -> None:
+        """POST a single key press or release event to kvmd.
+
+        ``state`` is the string ``"true"`` (press) or ``"false"`` (release) —
+        kvmd's API spec documents the ``state`` query parameter as a boolean,
+        serialised as a lowercase string.
+        """
+        requests.post(
+            f"{self._base}/api/hid/events/send_key",
+            params={"key": code, "state": state},
+            headers=self._headers,
+            verify=self._verify,
+            timeout=10,
+        )
+
+    def tap(self, key: str) -> None:
+        """Press and release a single key."""
+        code = canonical_key(key)
+        self._send_key(code, "true")
+        self._send_key(code, "false")

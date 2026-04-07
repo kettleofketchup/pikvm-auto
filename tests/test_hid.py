@@ -2,9 +2,26 @@
 
 from __future__ import annotations
 
+from unittest.mock import MagicMock
+
 import pytest
 
-from pikvm_auto._internal.commands.hid import HIDAction, canonical_key
+from pikvm_auto._internal.commands.hid import HIDAction, HIDClient, canonical_key
+
+
+def _mock_pikvm() -> MagicMock:
+    """Mock PiKVM with the attribute surface HIDClient reads.
+
+    Mirrors pikvm_lib.pikvm_aux.pikvm_aux.BuildPiKVM:
+      - hostname, schema, headers, certificate_trusted set in __init__
+      - HTTP done via module-level requests.{get,post}, NOT a session
+    """
+    pk = MagicMock()
+    pk.hostname = "pikvm.local"
+    pk.schema = "https"
+    pk.headers = {"X-KVMD-User": "admin", "X-KVMD-Passwd": "admin"}
+    pk.certificate_trusted = False
+    return pk
 
 
 def test_hid_action_key_kind() -> None:
@@ -61,3 +78,40 @@ def test_canonical_key_unknown_raises() -> None:
     """Unknown keys raise ValueError."""
     with pytest.raises(ValueError, match="unknown key"):
         canonical_key("BogusKey")
+
+
+def test_tap_sends_key_event_to_kvmd(monkeypatch: pytest.MonkeyPatch) -> None:
+    """HIDClient.tap posts press + release to /api/hid/events/send_key."""
+    pk = _mock_pikvm()
+    posts: list[tuple[str, dict]] = []
+
+    def fake_post(url: str, **kwargs: object) -> MagicMock:
+        posts.append((url, kwargs))
+        return MagicMock(status_code=200)
+
+    monkeypatch.setattr("pikvm_auto._internal.commands.hid.requests.post", fake_post)
+
+    HIDClient(pk).tap("F11")
+
+    assert len(posts) == 2
+    url1, kw1 = posts[0]
+    url2, kw2 = posts[1]
+    assert url1 == "https://pikvm.local/api/hid/events/send_key"
+    assert url2 == "https://pikvm.local/api/hid/events/send_key"
+    assert kw1["params"] == {"key": "KeyF11", "state": "true"}
+    assert kw2["params"] == {"key": "KeyF11", "state": "false"}
+    assert kw1["headers"] == {"X-KVMD-User": "admin", "X-KVMD-Passwd": "admin"}
+    assert kw1["verify"] is False
+    assert kw1["timeout"] == 10
+
+
+def test_tap_friendly_alias(monkeypatch: pytest.MonkeyPatch) -> None:
+    """HIDClient.tap canonicalizes friendly aliases before posting."""
+    pk = _mock_pikvm()
+    posts: list[tuple[str, dict]] = []
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.hid.requests.post",
+        lambda url, **kw: posts.append((url, kw)) or MagicMock(status_code=200),
+    )
+    HIDClient(pk).tap("down")
+    assert posts[0][1]["params"]["key"] == "ArrowDown"
