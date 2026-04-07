@@ -201,6 +201,8 @@ class HIDClient:
         Server-side timing is more reliable than a synthesised press/release
         sequence, so this delegates the entire chord to kvmd.
         """
+        if not keys:
+            raise ValueError("shortcut() requires at least one key")
         codes = ",".join(canonical_key(k) for k in keys)
         resp = requests.post(
             f"{self._base}/api/hid/events/send_shortcut",
@@ -217,6 +219,8 @@ class HIDClient:
         ``limit=0`` means unlimited length. ``slow=True`` adds inter-character
         delays server-side for flaky guest input handling.
         """
+        if not text:
+            raise ValueError("type_text() requires non-empty text")
         params: dict[str, str | int] = {"limit": 0}
         if slow:
             params["slow"] = "true"

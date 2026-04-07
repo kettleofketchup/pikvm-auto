@@ -278,6 +278,18 @@ def test_actions_from_yaml_rejects_unknown_kind() -> None:
         actions_from_yaml([{"kind": "wiggle"}])
 
 
+def test_shortcut_rejects_empty_keys():
+    pk = _mock_pikvm()
+    with pytest.raises(ValueError, match="shortcut.*at least one"):
+        HIDClient(pk).shortcut([])
+
+
+def test_type_text_rejects_empty_string():
+    pk = _mock_pikvm()
+    with pytest.raises(ValueError, match="type_text.*non-empty"):
+        HIDClient(pk).type_text("")
+
+
 def test_tap_raises_on_http_error(monkeypatch):
     import requests as _requests
     pk = _mock_pikvm()
