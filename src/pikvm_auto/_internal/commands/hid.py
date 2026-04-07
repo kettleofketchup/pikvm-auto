@@ -211,3 +211,21 @@ class HIDClient:
             verify=self._verify,
             timeout=10,
         )
+
+    def type_text(self, text: str, *, slow: bool = False) -> None:
+        """Type a string via ``/api/hid/print``.
+
+        ``limit=0`` means unlimited length. ``slow=True`` adds inter-character
+        delays server-side for flaky guest input handling.
+        """
+        params: dict[str, str | int] = {"limit": 0}
+        if slow:
+            params["slow"] = "true"
+        requests.post(
+            f"{self._base}/api/hid/print",
+            params=params,
+            data=text,
+            headers=self._headers,
+            verify=self._verify,
+            timeout=30,
+        )

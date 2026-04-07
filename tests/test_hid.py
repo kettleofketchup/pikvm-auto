@@ -167,3 +167,36 @@ def test_shortcut_canonicalizes_each_key(monkeypatch: pytest.MonkeyPatch) -> Non
     )
     HIDClient(pk).shortcut(["meta", "F11"])
     assert captured["params"]["keys"] == "MetaLeft,KeyF11"
+
+
+def test_type_text_calls_print_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    """HIDClient.type_text posts string body to /api/hid/print."""
+    pk = _mock_pikvm()
+    captured: dict = {}
+
+    def fake_post(url: str, **kw: object) -> MagicMock:
+        captured["url"] = url
+        captured.update(kw)
+        return MagicMock(status_code=200)
+
+    monkeypatch.setattr("pikvm_auto._internal.commands.hid.requests.post", fake_post)
+
+    HIDClient(pk).type_text("Hello")
+    assert captured["url"] == "https://pikvm.local/api/hid/print"
+    assert captured["params"] == {"limit": 0}
+    assert captured["data"] == "Hello"
+    assert captured["headers"] == pk.headers
+    assert captured["verify"] is False
+    assert captured["timeout"] == 30
+
+
+def test_type_text_slow_mode(monkeypatch: pytest.MonkeyPatch) -> None:
+    """HIDClient.type_text passes slow=true when requested."""
+    pk = _mock_pikvm()
+    captured: dict = {}
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.hid.requests.post",
+        lambda url, **kw: captured.update(kw) or MagicMock(status_code=200),
+    )
+    HIDClient(pk).type_text("Hi", slow=True)
+    assert captured["params"]["slow"] == "true"
