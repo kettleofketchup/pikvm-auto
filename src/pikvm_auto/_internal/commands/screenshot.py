@@ -19,6 +19,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
+import requests
+
 if TYPE_CHECKING:
     from pathlib import Path
 
@@ -90,7 +92,34 @@ def fuzzy_score(
 
 
 class ScreenshotClient:
-    """Client for /api/streamer/snapshot (stub — real impl in Task 2.3)."""
+    """Client for /api/streamer/snapshot + OCR.
+
+    Reads ``headers``, ``hostname``, ``schema``, and ``certificate_trusted``
+    from the passed ``PiKVM`` instance and calls the module-level
+    ``requests.get`` directly (matching pikvm-lib's own pattern — see the
+    module comment block at the top of this file).
+    """
 
     def __init__(self, pikvm: PiKVM) -> None:
-        self._pk = pikvm
+        self._headers = pikvm.headers
+        self._base = f"{pikvm.schema}://{pikvm.hostname}"
+        self._verify = pikvm.certificate_trusted
+
+    def capture(self, *, ocr: bool = False) -> bytes:
+        """Fetch a screenshot via ``/api/streamer/snapshot``.
+
+        With ``ocr=True`` the response Content-Type is ``text/plain`` (the
+        kvmd OCR result); otherwise it is ``image/jpeg`` binary data.
+        """
+        params: dict[str, str] = {}
+        if ocr:
+            params["ocr"] = "true"
+        resp = requests.get(
+            f"{self._base}/api/streamer/snapshot",
+            params=params,
+            headers=self._headers,
+            verify=self._verify,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        return resp.content

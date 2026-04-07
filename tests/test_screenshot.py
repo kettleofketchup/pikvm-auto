@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
-from pikvm_auto._internal.commands.screenshot import ScreenMatch, fuzzy_score
+from pikvm_auto._internal.commands.screenshot import (
+    ScreenMatch,
+    ScreenshotClient,
+    fuzzy_score,
+)
+
+if TYPE_CHECKING:
+    import pytest
 
 
 def _mock_pikvm() -> MagicMock:
@@ -56,3 +64,51 @@ def test_fuzzy_score_case_insensitive_default() -> None:
 def test_fuzzy_score_case_sensitive() -> None:
     """case_sensitive=True makes case mismatches score below 1.0."""
     assert fuzzy_score("BOOT", "boot", case_sensitive=True) < 1.0
+
+
+def test_capture_returns_bytes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """capture() returns raw jpeg bytes from /api/streamer/snapshot."""
+    captured: dict[str, object] = {}
+
+    def fake_get(url: str, **kwargs: object) -> MagicMock:
+        captured["url"] = url
+        captured.update(kwargs)
+        m = MagicMock(status_code=200)
+        m.content = b"\xff\xd8\xff\xe0fakejpeg"
+        return m
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.requests.get",
+        fake_get,
+    )
+
+    pk = _mock_pikvm()
+    data = ScreenshotClient(pk).capture()
+
+    assert data == b"\xff\xd8\xff\xe0fakejpeg"
+    assert captured["url"] == "https://pikvm.local/api/streamer/snapshot"
+    assert captured["params"] == {}
+    assert captured["headers"] == pk.headers
+    assert captured["verify"] is False
+    assert captured["timeout"] == 30
+
+
+def test_capture_with_ocr_flag_passes_param(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """capture(ocr=True) sends ocr=true query param."""
+    captured: dict[str, object] = {}
+
+    def fake_get(_url: str, **kwargs: object) -> MagicMock:
+        captured.update(kwargs)
+        m = MagicMock(status_code=200)
+        m.content = b"text bytes"
+        return m
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.requests.get",
+        fake_get,
+    )
+
+    ScreenshotClient(_mock_pikvm()).capture(ocr=True)
+    assert captured["params"]["ocr"] == "true"
