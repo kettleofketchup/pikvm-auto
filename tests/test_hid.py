@@ -115,3 +115,26 @@ def test_tap_friendly_alias(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     HIDClient(pk).tap("down")
     assert posts[0][1]["params"]["key"] == "ArrowDown"
+
+
+def test_press_holds_for_configured_duration(monkeypatch: pytest.MonkeyPatch) -> None:
+    """HIDClient.press sends press, sleeps hold_ms, then sends release."""
+    pk = _mock_pikvm()
+    posts: list[tuple[str, dict]] = []
+    sleep_calls: list[float] = []
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.hid.requests.post",
+        lambda url, **kw: posts.append((url, kw)) or MagicMock(status_code=200),
+    )
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.hid.time.sleep",
+        lambda s: sleep_calls.append(s),
+    )
+
+    HIDClient(pk).press("F11", hold_ms=200)
+
+    assert sleep_calls == [0.2]
+    assert len(posts) == 2
+    assert posts[0][1]["params"] == {"key": "KeyF11", "state": "true"}
+    assert posts[1][1]["params"] == {"key": "KeyF11", "state": "false"}

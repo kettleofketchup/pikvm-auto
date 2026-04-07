@@ -189,3 +189,10 @@ class HIDClient:
         code = canonical_key(key)
         self._send_key(code, "true")
         self._send_key(code, "false")
+
+    def press(self, key: str, *, hold_ms: int = 50) -> None:
+        """Press a key, hold it for ``hold_ms`` milliseconds, then release."""
+        code = canonical_key(key)
+        self._send_key(code, "true")
+        time.sleep(hold_ms / 1000)
+        self._send_key(code, "false")
