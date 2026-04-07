@@ -1,27 +1,25 @@
-"""HID input library for PiKVM.
-
-Provides a high-level interface for sending keyboard input via the kvmd HTTP
-API (key taps, chorded shortcuts, text typing, and timed sequences).
-
-HTTP wiring
------------
-pikvm-lib 0.5.0's ``BuildPiKVM`` does NOT use a ``requests.Session``. Upstream
-calls the module-level ``requests.get`` / ``requests.post`` functions directly
-with ``headers=self.headers`` and ``verify=self.certificate_trusted`` on every
-call. ``HIDClient`` follows the same pattern: it reads ``headers``,
-``hostname``, ``schema``, and ``certificate_trusted`` from the passed PiKVM
-instance and calls the module-level ``requests.post`` directly. There is no
-``_session`` attribute on the PiKVM object. Tests must monkeypatch
-``pikvm_auto._internal.commands.hid.requests.post`` rather than any session.
-
-Modifier key aliases
---------------------
-Short modifier aliases (``ctrl``, ``alt``, ``shift``, ``meta``/``win``) default
-to the LEFT variant of the corresponding kvmd key code (``ControlLeft``,
-``AltLeft``, ``ShiftLeft``, ``MetaLeft``). To target the right-hand modifier,
-pass the canonical name directly (``ControlRight``, ``AltRight``,
-``ShiftRight``, ``MetaRight``).
-"""
+# HID input library for PiKVM.
+#
+# Provides a high-level interface for sending keyboard input via the kvmd HTTP
+# API (key taps, chorded shortcuts, text typing, and timed sequences).
+#
+# HTTP wiring
+# -----------
+# pikvm-lib 0.5.0's BuildPiKVM does NOT use a requests.Session. Upstream calls
+# the module-level requests.get / requests.post functions directly with
+# headers=self.headers and verify=self.certificate_trusted on every call.
+# HIDClient follows the same pattern: it reads headers, hostname, schema, and
+# certificate_trusted from the passed PiKVM instance and calls the
+# module-level requests.post directly. The PiKVM object exposes no persistent
+# HTTP session attribute. Tests must monkeypatch
+# pikvm_auto._internal.commands.hid.requests.post rather than any session.
+#
+# Modifier key aliases
+# --------------------
+# Short modifier aliases (ctrl, alt, shift, meta/win) default to the LEFT
+# variant of the corresponding kvmd key code (ControlLeft, AltLeft, ShiftLeft,
+# MetaLeft). To target the right-hand modifier, pass the canonical name
+# directly (ControlRight, AltRight, ShiftRight, MetaRight).
 
 from __future__ import annotations
 
