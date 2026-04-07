@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import time
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal, Optional
+from typing import TYPE_CHECKING, Literal
 
 import requests
 
@@ -46,10 +46,10 @@ class HIDAction:
     """
 
     kind: Literal["key", "shortcut", "text", "wait"]
-    key: Optional[str] = None
-    keys: Optional[list[str]] = None
-    text: Optional[str] = None
-    seconds: Optional[float] = None
+    key: str | None = None
+    keys: list[str] | None = None
+    text: str | None = None
+    seconds: float | None = None
 
 
 # Friendly alias → kvmd canonical key code.
@@ -120,7 +120,7 @@ _CANONICAL_SINGLES: frozenset[str] = frozenset(
         "Comma",
         "Period",
         "Slash",
-    }
+    },
 )
 
 _CANONICAL_PREFIXES: tuple[str, ...] = ("Key", "Arrow", "Digit", "Numpad")
@@ -161,7 +161,7 @@ class HIDClient:
     docstring).
     """
 
-    def __init__(self, pikvm: "PiKVM") -> None:
+    def __init__(self, pikvm: PiKVM) -> None:
         self._headers = pikvm.headers
         self._base = f"{pikvm.schema}://{pikvm.hostname}"
         self._verify = pikvm.certificate_trusted
@@ -292,6 +292,6 @@ def actions_from_yaml(raw: list[dict]) -> list[HIDAction]:
                 keys=item.get("keys"),
                 text=item.get("text"),
                 seconds=item.get("seconds"),
-            )
+            ),
         )
     return out

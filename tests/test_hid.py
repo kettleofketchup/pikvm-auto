@@ -5,6 +5,7 @@ from __future__ import annotations
 from unittest.mock import MagicMock
 
 import pytest
+import requests
 
 from pikvm_auto._internal.commands.hid import (
     HIDAction,
@@ -134,7 +135,7 @@ def test_press_holds_for_configured_duration(monkeypatch: pytest.MonkeyPatch) ->
     )
     monkeypatch.setattr(
         "pikvm_auto._internal.commands.hid.time.sleep",
-        lambda s: sleep_calls.append(s),
+        sleep_calls.append,
     )
 
     HIDClient(pk).press("F11", hold_ms=200)
@@ -219,7 +220,7 @@ def test_play_executes_mixed_sequence(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     monkeypatch.setattr(
         "pikvm_auto._internal.commands.hid.time.sleep",
-        lambda s: sleep_calls.append(s),
+        sleep_calls.append,
     )
 
     actions = [
@@ -232,7 +233,7 @@ def test_play_executes_mixed_sequence(monkeypatch: pytest.MonkeyPatch) -> None:
     HIDClient(pk).play(actions)
 
     assert sleep_calls == [1.0, 2.0]
-    # 3 keys × 2 POSTs each (press + release) = 6 posts
+    # 3 keys x 2 POSTs each (press + release) = 6 posts
     assert len(posts) == 6
     assert posts[0][1]["params"] == {"key": "KeyF11", "state": "true"}
     assert posts[1][1]["params"] == {"key": "KeyF11", "state": "false"}
@@ -266,10 +267,14 @@ def test_actions_from_yaml_deserializes_list() -> None:
     ]
     actions = actions_from_yaml(raw)
     assert len(actions) == 4
-    assert actions[0].kind == "wait" and actions[0].seconds == 2
-    assert actions[1].kind == "key" and actions[1].key == "F11"
-    assert actions[2].kind == "shortcut" and actions[2].keys == ["Ctrl", "Alt", "Delete"]
-    assert actions[3].kind == "text" and actions[3].text == "hello"
+    assert actions[0].kind == "wait"
+    assert actions[0].seconds == 2
+    assert actions[1].kind == "key"
+    assert actions[1].key == "F11"
+    assert actions[2].kind == "shortcut"
+    assert actions[2].keys == ["Ctrl", "Alt", "Delete"]
+    assert actions[3].kind == "text"
+    assert actions[3].text == "hello"
 
 
 def test_actions_from_yaml_rejects_unknown_kind() -> None:
@@ -278,50 +283,56 @@ def test_actions_from_yaml_rejects_unknown_kind() -> None:
         actions_from_yaml([{"kind": "wiggle"}])
 
 
-def test_actions_from_yaml_rejects_missing_key_for_key_kind():
+def test_actions_from_yaml_rejects_missing_key_for_key_kind() -> None:
+    """actions_from_yaml rejects kind=key payloads without a 'key' field."""
     with pytest.raises(ValueError, match="kind=key requires"):
         actions_from_yaml([{"kind": "key"}])
 
 
-def test_actions_from_yaml_rejects_missing_keys_for_shortcut_kind():
+def test_actions_from_yaml_rejects_missing_keys_for_shortcut_kind() -> None:
+    """actions_from_yaml rejects kind=shortcut payloads without 'keys'."""
     with pytest.raises(ValueError, match="kind=shortcut requires"):
         actions_from_yaml([{"kind": "shortcut"}])
 
 
-def test_actions_from_yaml_rejects_missing_text_for_text_kind():
+def test_actions_from_yaml_rejects_missing_text_for_text_kind() -> None:
+    """actions_from_yaml rejects kind=text payloads without 'text'."""
     with pytest.raises(ValueError, match="kind=text requires"):
         actions_from_yaml([{"kind": "text"}])
 
 
-def test_actions_from_yaml_rejects_missing_seconds_for_wait_kind():
+def test_actions_from_yaml_rejects_missing_seconds_for_wait_kind() -> None:
+    """actions_from_yaml rejects kind=wait payloads without 'seconds'."""
     with pytest.raises(ValueError, match="kind=wait requires"):
         actions_from_yaml([{"kind": "wait"}])
 
 
-def test_shortcut_rejects_empty_keys():
+def test_shortcut_rejects_empty_keys() -> None:
+    """HIDClient.shortcut raises ValueError when called with no keys."""
     pk = _mock_pikvm()
-    with pytest.raises(ValueError, match="shortcut.*at least one"):
+    with pytest.raises(ValueError, match=r"shortcut.*at least one"):
         HIDClient(pk).shortcut([])
 
 
-def test_type_text_rejects_empty_string():
+def test_type_text_rejects_empty_string() -> None:
+    """HIDClient.type_text raises ValueError when given an empty string."""
     pk = _mock_pikvm()
-    with pytest.raises(ValueError, match="type_text.*non-empty"):
+    with pytest.raises(ValueError, match=r"type_text.*non-empty"):
         HIDClient(pk).type_text("")
 
 
-def test_tap_raises_on_http_error(monkeypatch):
-    import requests as _requests
+def test_tap_raises_on_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """HIDClient.tap surfaces non-2xx HTTP responses as HTTPError."""
     pk = _mock_pikvm()
 
-    def fake_post(url, **kwargs):
+    def fake_post(_url: str, **_kwargs: object) -> MagicMock:
         resp = MagicMock(status_code=401)
-        resp.raise_for_status.side_effect = _requests.HTTPError("401 Unauthorized")
+        resp.raise_for_status.side_effect = requests.HTTPError("401 Unauthorized")
         return resp
 
     monkeypatch.setattr(
         "pikvm_auto._internal.commands.hid.requests.post", fake_post,
     )
 
-    with pytest.raises(_requests.HTTPError, match="401"):
+    with pytest.raises(requests.HTTPError, match="401"):
         HIDClient(pk).tap("F11")
