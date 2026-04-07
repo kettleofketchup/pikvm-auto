@@ -155,6 +155,8 @@ class ScreenshotClient:
         last OCR text observed, total elapsed seconds, and any screenshot
         files saved to ``capture_dir``.
         """
+        if not expected:
+            raise ValueError("wait_for_text() requires non-empty expected text")
         start = time.monotonic()
         deadline = start + timeout
         captures: list[Path] = []

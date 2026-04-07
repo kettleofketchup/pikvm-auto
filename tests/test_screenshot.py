@@ -5,6 +5,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
+import pytest
+
 from pikvm_auto._internal.commands.screenshot import (
     ScreenMatch,
     ScreenshotClient,
@@ -13,8 +15,6 @@ from pikvm_auto._internal.commands.screenshot import (
 
 if TYPE_CHECKING:
     from pathlib import Path
-
-    import pytest
 
 
 def _mock_pikvm() -> MagicMock:
@@ -229,6 +229,13 @@ def test_wait_for_text_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
         interval=0.1,
     )
     assert m.matched is False
+
+
+def test_wait_for_text_rejects_empty_expected() -> None:
+    """wait_for_text() rejects empty expected text at the boundary."""
+    pk = _mock_pikvm()
+    with pytest.raises(ValueError, match=r"wait_for_text.*non-empty"):
+        ScreenshotClient(pk).wait_for_text("")
 
 
 def test_wait_for_text_saves_captures(
