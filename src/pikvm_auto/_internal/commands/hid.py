@@ -174,13 +174,14 @@ class HIDClient:
         kvmd's API spec documents the ``state`` query parameter as a boolean,
         serialised as a lowercase string.
         """
-        requests.post(
+        resp = requests.post(
             f"{self._base}/api/hid/events/send_key",
             params={"key": code, "state": state},
             headers=self._headers,
             verify=self._verify,
             timeout=10,
         )
+        resp.raise_for_status()
 
     def tap(self, key: str) -> None:
         """Press and release a single key."""
@@ -202,13 +203,14 @@ class HIDClient:
         sequence, so this delegates the entire chord to kvmd.
         """
         codes = ",".join(canonical_key(k) for k in keys)
-        requests.post(
+        resp = requests.post(
             f"{self._base}/api/hid/events/send_shortcut",
             params={"keys": codes},
             headers=self._headers,
             verify=self._verify,
             timeout=10,
         )
+        resp.raise_for_status()
 
     def type_text(self, text: str, *, slow: bool = False) -> None:
         """Type a string via ``/api/hid/print``.
@@ -219,7 +221,7 @@ class HIDClient:
         params: dict[str, str | int] = {"limit": 0}
         if slow:
             params["slow"] = "true"
-        requests.post(
+        resp = requests.post(
             f"{self._base}/api/hid/print",
             params=params,
             data=text,
@@ -227,6 +229,7 @@ class HIDClient:
             verify=self._verify,
             timeout=30,
         )
+        resp.raise_for_status()
 
     def play(self, actions: list[HIDAction]) -> None:
         """Execute a sequence of HID actions in order.

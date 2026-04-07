@@ -276,3 +276,20 @@ def test_actions_from_yaml_rejects_unknown_kind() -> None:
     """actions_from_yaml raises ValueError on unknown kinds."""
     with pytest.raises(ValueError, match="unknown HIDAction kind"):
         actions_from_yaml([{"kind": "wiggle"}])
+
+
+def test_tap_raises_on_http_error(monkeypatch):
+    import requests as _requests
+    pk = _mock_pikvm()
+
+    def fake_post(url, **kwargs):
+        resp = MagicMock(status_code=401)
+        resp.raise_for_status.side_effect = _requests.HTTPError("401 Unauthorized")
+        return resp
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.hid.requests.post", fake_post,
+    )
+
+    with pytest.raises(_requests.HTTPError, match="401"):
+        HIDClient(pk).tap("F11")
