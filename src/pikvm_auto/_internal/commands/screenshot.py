@@ -130,6 +130,8 @@ class ScreenshotClient:
 
         Missing parent directories are created automatically.
         """
+        if not path:
+            raise ValueError("capture_to() requires a non-empty path")
         p = Path(path)
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_bytes(self.capture())

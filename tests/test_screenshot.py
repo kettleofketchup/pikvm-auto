@@ -231,6 +231,13 @@ def test_wait_for_text_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
     assert m.matched is False
 
 
+def test_capture_to_rejects_empty_path() -> None:
+    """capture_to() rejects empty path at the boundary."""
+    pk = _mock_pikvm()
+    with pytest.raises(ValueError, match=r"capture_to.*non-empty path"):
+        ScreenshotClient(pk).capture_to("")
+
+
 def test_wait_for_text_rejects_empty_expected() -> None:
     """wait_for_text() rejects empty expected text at the boundary."""
     pk = _mock_pikvm()
