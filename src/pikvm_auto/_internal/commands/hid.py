@@ -256,3 +256,30 @@ class HIDClient:
                 self.type_text(a.text)
             else:
                 raise ValueError(f"unknown HIDAction kind: {a.kind!r}")
+
+
+_VALID_KINDS: frozenset[str] = frozenset({"key", "shortcut", "text", "wait"})
+
+
+def actions_from_yaml(raw: list[dict]) -> list[HIDAction]:
+    """Build a list of ``HIDAction`` from raw dicts (e.g. parsed YAML).
+
+    Each dict must have a valid ``kind`` plus the relevant payload fields
+    (``key``, ``keys``, ``text``, ``seconds``). Unknown kinds raise
+    ``ValueError`` with the offending item index.
+    """
+    out: list[HIDAction] = []
+    for i, item in enumerate(raw):
+        kind = item.get("kind")
+        if kind not in _VALID_KINDS:
+            raise ValueError(f"unknown HIDAction kind: {kind!r} (item {i})")
+        out.append(
+            HIDAction(
+                kind=kind,
+                key=item.get("key"),
+                keys=item.get("keys"),
+                text=item.get("text"),
+                seconds=item.get("seconds"),
+            )
+        )
+    return out

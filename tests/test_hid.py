@@ -6,7 +6,12 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from pikvm_auto._internal.commands.hid import HIDAction, HIDClient, canonical_key
+from pikvm_auto._internal.commands.hid import (
+    HIDAction,
+    HIDClient,
+    actions_from_yaml,
+    canonical_key,
+)
 
 
 def _mock_pikvm() -> MagicMock:
@@ -249,3 +254,25 @@ def test_play_rejects_unknown_kind(monkeypatch: pytest.MonkeyPatch) -> None:
     bogus.kind = "wiggle"  # type: ignore[assignment]
     with pytest.raises(ValueError, match="unknown HIDAction kind"):
         HIDClient(pk).play([bogus])
+
+
+def test_actions_from_yaml_deserializes_list() -> None:
+    """actions_from_yaml builds HIDAction objects from plain dicts."""
+    raw = [
+        {"kind": "wait", "seconds": 2},
+        {"kind": "key", "key": "F11"},
+        {"kind": "shortcut", "keys": ["Ctrl", "Alt", "Delete"]},
+        {"kind": "text", "text": "hello"},
+    ]
+    actions = actions_from_yaml(raw)
+    assert len(actions) == 4
+    assert actions[0].kind == "wait" and actions[0].seconds == 2
+    assert actions[1].kind == "key" and actions[1].key == "F11"
+    assert actions[2].kind == "shortcut" and actions[2].keys == ["Ctrl", "Alt", "Delete"]
+    assert actions[3].kind == "text" and actions[3].text == "hello"
+
+
+def test_actions_from_yaml_rejects_unknown_kind() -> None:
+    """actions_from_yaml raises ValueError on unknown kinds."""
+    with pytest.raises(ValueError, match="unknown HIDAction kind"):
+        actions_from_yaml([{"kind": "wiggle"}])
