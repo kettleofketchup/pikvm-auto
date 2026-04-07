@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
+import requests as _requests
 
 from pikvm_auto._internal.commands.screenshot import (
     ScreenMatch,
@@ -268,6 +269,26 @@ def test_wait_for_text_rejects_non_positive_interval() -> None:
         ScreenshotClient(pk).wait_for_text("Boot", interval=0)
     with pytest.raises(ValueError, match=r"interval must be positive"):
         ScreenshotClient(pk).wait_for_text("Boot", interval=-0.5)
+
+
+def test_capture_raises_on_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
+    """capture() propagates HTTPError via raise_for_status()."""
+    pk = _mock_pikvm()
+
+    def fake_get(_url: str, **_kwargs: object) -> MagicMock:
+        resp = MagicMock(status_code=500)
+        resp.raise_for_status.side_effect = _requests.HTTPError(
+            "500 Internal Server Error",
+        )
+        return resp
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.requests.get",
+        fake_get,
+    )
+
+    with pytest.raises(_requests.HTTPError, match=r"500"):
+        ScreenshotClient(pk).capture()
 
 
 def test_wait_for_text_saves_captures(
