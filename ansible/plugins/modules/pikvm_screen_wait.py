@@ -94,6 +94,7 @@ captures:
     description: Paths to saved screenshots (if capture_dir was set).
     returned: always
     type: list
+    elements: str
 """
 
 from ansible.module_utils.basic import AnsibleModule
