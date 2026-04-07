@@ -120,6 +120,9 @@ def main():
         supports_check_mode=True,
     )
 
+    if not module.params["expected"]:
+        module.fail_json(msg="pikvm_screen_wait requires a non-empty 'expected' text")
+
     if module.check_mode:
         module.exit_json(
             changed=False,
