@@ -24,6 +24,14 @@ if TYPE_CHECKING:
 
     from pikvm_lib.pikvm import PiKVM
 
+try:
+    from rapidfuzz import fuzz as _fuzz
+
+    _HAVE_RAPIDFUZZ = True
+except ImportError:
+    _HAVE_RAPIDFUZZ = False
+    import difflib
+
 
 @dataclass
 class ScreenMatch:
@@ -52,11 +60,33 @@ def fuzzy_score(
     *,
     case_sensitive: bool = False,
 ) -> float:
-    """Return a fuzzy similarity score in [0.0, 1.0].
+    """Return a substring-aware fuzzy similarity score in [0.0, 1.0].
 
-    Stub — real implementation lands in Task 2.2.
+    Uses ``rapidfuzz.fuzz.partial_ratio`` when available (handles substring
+    matches and OCR character-level errors). Falls back to a ``difflib``
+    ``SequenceMatcher`` sliding window if rapidfuzz isn't installed.
     """
-    raise NotImplementedError
+    if not expected:
+        return 1.0
+    if not actual:
+        return 0.0
+    e, a = (expected, actual) if case_sensitive else (expected.lower(), actual.lower())
+
+    if _HAVE_RAPIDFUZZ:
+        return _fuzz.partial_ratio(e, a) / 100.0
+
+    # Fallback: sliding window of len(expected) over actual
+    elen = len(e)
+    if elen >= len(a):
+        return difflib.SequenceMatcher(None, e, a).ratio()
+    best = 0.0
+    for i in range(len(a) - elen + 1):
+        chunk = a[i : i + elen]
+        r = difflib.SequenceMatcher(None, e, chunk).ratio()
+        best = max(best, r)
+        if best >= 1.0:
+            break
+    return best
 
 
 class ScreenshotClient:
