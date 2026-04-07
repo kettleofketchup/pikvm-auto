@@ -138,3 +138,32 @@ def test_press_holds_for_configured_duration(monkeypatch: pytest.MonkeyPatch) ->
     assert len(posts) == 2
     assert posts[0][1]["params"] == {"key": "KeyF11", "state": "true"}
     assert posts[1][1]["params"] == {"key": "KeyF11", "state": "false"}
+
+
+def test_shortcut_calls_send_shortcut_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
+    """HIDClient.shortcut posts atomically to /api/hid/events/send_shortcut."""
+    pk = _mock_pikvm()
+    posts: list[tuple[str, dict]] = []
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.hid.requests.post",
+        lambda url, **kw: posts.append((url, kw)) or MagicMock(status_code=200),
+    )
+    HIDClient(pk).shortcut(["Ctrl", "Alt", "Delete"])
+    assert len(posts) == 1
+    url, kw = posts[0]
+    assert url == "https://pikvm.local/api/hid/events/send_shortcut"
+    assert kw["params"] == {"keys": "ControlLeft,AltLeft,Delete"}
+    assert kw["headers"] == pk.headers
+    assert kw["verify"] is False
+
+
+def test_shortcut_canonicalizes_each_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    """HIDClient.shortcut canonicalizes every key in the chord."""
+    pk = _mock_pikvm()
+    captured: dict = {}
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.hid.requests.post",
+        lambda url, **kw: captured.update(kw) or MagicMock(status_code=200),
+    )
+    HIDClient(pk).shortcut(["meta", "F11"])
+    assert captured["params"]["keys"] == "MetaLeft,KeyF11"

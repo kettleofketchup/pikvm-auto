@@ -196,3 +196,18 @@ class HIDClient:
         self._send_key(code, "true")
         time.sleep(hold_ms / 1000)
         self._send_key(code, "false")
+
+    def shortcut(self, keys: list[str]) -> None:
+        """Send a chord atomically via kvmd's ``/api/hid/events/send_shortcut``.
+
+        Server-side timing is more reliable than a synthesised press/release
+        sequence, so this delegates the entire chord to kvmd.
+        """
+        codes = ",".join(canonical_key(k) for k in keys)
+        requests.post(
+            f"{self._base}/api/hid/events/send_shortcut",
+            params={"keys": codes},
+            headers=self._headers,
+            verify=self._verify,
+            timeout=10,
+        )
