@@ -12,6 +12,12 @@ description:
     - Polls the PiKVM streamer OCR endpoint until the expected text appears
       on screen with a similarity score >= threshold.
     - Useful for synchronising HID input with BIOS/OS state during automation.
+notes:
+    - "This module FAILS the task on timeout. Use C(failed_when: false) or
+      C(ignore_errors: yes) on the task if you want to inspect the match
+      result without failing the play."
+    - "In Ansible C(--check) mode the module returns C(matched=false) without
+      polling — check mode reports a result skeleton, not a real screen state."
 options:
     expected:
         description: The text to wait for. Literal string, no regex.
@@ -62,7 +68,10 @@ changed:
     returned: always
     type: bool
 matched:
-    description: Whether the expected text was found within timeout.
+    description:
+        - Whether the expected text was found within the timeout.
+        - When C(false), the module fails the task; use C(failed_when: false)
+          or C(ignore_errors: yes) to inspect the result without failing.
     returned: always
     type: bool
 score:
