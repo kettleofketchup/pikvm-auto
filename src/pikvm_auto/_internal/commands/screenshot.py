@@ -16,7 +16,9 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -136,3 +138,59 @@ class ScreenshotClient:
     def capture_text(self) -> str:
         """Capture the screen and return the OCR'd text."""
         return self.capture(ocr=True).decode("utf-8", errors="replace")
+
+    def wait_for_text(
+        self,
+        expected: str,
+        *,
+        threshold: float = 0.9,
+        timeout: float = 60.0,
+        interval: float = 1.0,
+        capture_dir: Path | None = None,
+        case_sensitive: bool = False,
+    ) -> ScreenMatch:
+        """Poll OCR until fuzzy_score(expected, screen) >= threshold or timeout.
+
+        Returns a ``ScreenMatch`` with the ``matched`` flag, final score, the
+        last OCR text observed, total elapsed seconds, and any screenshot
+        files saved to ``capture_dir``.
+        """
+        start = time.monotonic()
+        deadline = start + timeout
+        captures: list[Path] = []
+        last_text = ""
+        last_score = 0.0
+        attempt = 0
+
+        while True:
+            attempt += 1
+            text = self.capture_text()
+            score = fuzzy_score(expected, text, case_sensitive=case_sensitive)
+            last_text, last_score = text, score
+
+            if capture_dir is not None:
+                stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
+                p = Path(capture_dir) / f"{stamp}-{attempt:03d}.jpeg"
+                self.capture_to(p)
+                captures.append(p)
+
+            if score >= threshold:
+                return ScreenMatch(
+                    matched=True,
+                    score=score,
+                    expected=expected,
+                    ocr_text=text,
+                    elapsed=time.monotonic() - start,
+                    captures=captures,
+                )
+
+            if time.monotonic() >= deadline:
+                return ScreenMatch(
+                    matched=False,
+                    score=last_score,
+                    expected=expected,
+                    ocr_text=last_text,
+                    elapsed=time.monotonic() - start,
+                    captures=captures,
+                )
+            time.sleep(interval)

@@ -177,3 +177,83 @@ def test_capture_text_uses_ocr(monkeypatch: pytest.MonkeyPatch) -> None:
     text = ScreenshotClient(_mock_pikvm()).capture_text()
     assert text == "Press F11 for Boot Menu"
     assert captured["params"]["ocr"] == "true"
+
+
+def test_wait_for_text_matches_immediately(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """wait_for_text() returns matched=True when OCR contains expected."""
+
+    def fake_get(_url: str, **_kwargs: object) -> MagicMock:
+        m = MagicMock(status_code=200)
+        m.content = b"Press F11 for Boot Menu"
+        return m
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.requests.get",
+        fake_get,
+    )
+
+    m = ScreenshotClient(_mock_pikvm()).wait_for_text(
+        "Boot Menu",
+        timeout=1.0,
+        interval=0.1,
+    )
+    assert m.matched is True
+    assert m.score >= 0.9
+    assert m.expected == "Boot Menu"
+    assert "Boot Menu" in m.ocr_text
+
+
+def test_wait_for_text_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    """wait_for_text() returns matched=False when the threshold never met."""
+
+    def fake_get(_url: str, **_kwargs: object) -> MagicMock:
+        m = MagicMock(status_code=200)
+        m.content = b"Press F11 for Bot Menu"  # OCR-style typo
+        return m
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.requests.get",
+        fake_get,
+    )
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.time.sleep",
+        lambda _s: None,
+    )
+
+    m = ScreenshotClient(_mock_pikvm()).wait_for_text(
+        "Boot Menu",
+        threshold=0.99,
+        timeout=0.3,
+        interval=0.1,
+    )
+    assert m.matched is False
+
+
+def test_wait_for_text_saves_captures(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """wait_for_text(capture_dir=...) persists at least one screenshot."""
+
+    def fake_get(_url: str, **_kwargs: object) -> MagicMock:
+        m = MagicMock(status_code=200)
+        m.content = b"Boot Menu"
+        return m
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.requests.get",
+        fake_get,
+    )
+
+    m = ScreenshotClient(_mock_pikvm()).wait_for_text(
+        "Boot Menu",
+        capture_dir=tmp_path,
+        timeout=1.0,
+        interval=0.1,
+    )
+    assert m.matched is True
+    assert len(m.captures) >= 1
+    for p in m.captures:
+        assert p.exists()
