@@ -74,3 +74,13 @@ class PiKVMModuleClient:
         return self.client.get_streamer_snapshot(
             snapshot_path=snapshot_path, filename=filename, ocr=ocr,
         )
+
+    def hid(self):
+        """Return a HIDClient bound to this connection."""
+        from pikvm_auto._internal.commands.hid import HIDClient
+        return HIDClient(self.client)
+
+    def screenshot(self):
+        """Return a ScreenshotClient bound to this connection."""
+        from pikvm_auto._internal.commands.screenshot import ScreenshotClient
+        return ScreenshotClient(self.client)
