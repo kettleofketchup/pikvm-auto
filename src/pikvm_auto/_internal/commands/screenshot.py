@@ -168,15 +168,12 @@ class ScreenshotClient:
         start = time.monotonic()
         deadline = start + timeout
         captures: list[Path] = []
-        last_text = ""
-        last_score = 0.0
         attempt = 0
 
         while True:
             attempt += 1
             text = self.capture_text()
             score = fuzzy_score(expected, text, case_sensitive=case_sensitive)
-            last_text, last_score = text, score
 
             if capture_dir is not None:
                 stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
@@ -197,9 +194,9 @@ class ScreenshotClient:
             if time.monotonic() >= deadline:
                 return ScreenMatch(
                     matched=False,
-                    score=last_score,
+                    score=score,
                     expected=expected,
-                    ocr_text=last_text,
+                    ocr_text=text,
                     elapsed=time.monotonic() - start,
                     captures=captures,
                 )
