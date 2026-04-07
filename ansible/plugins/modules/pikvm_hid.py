@@ -112,13 +112,18 @@ def main():
             )
         )
 
-    if module.check_mode:
-        module.exit_json(changed=False, actions_sent=len(raw_actions))
-        return
-
+    # Validate the action list at parse time (so --check mode catches typos too)
     try:
         from pikvm_auto._internal.commands.hid import actions_from_yaml
         actions = actions_from_yaml(raw_actions)
+    except Exception as e:
+        module.fail_json(msg=f"pikvm_hid invalid actions: {e}")
+
+    if module.check_mode:
+        module.exit_json(changed=False, actions_sent=len(actions))
+        return
+
+    try:
         client = PiKVMModuleClient(module)
         client.hid().play(actions)
     except Exception as e:
