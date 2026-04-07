@@ -180,6 +180,42 @@ def test_capture_text_uses_ocr(monkeypatch: pytest.MonkeyPatch) -> None:
     assert captured["params"]["ocr"] == "true"
 
 
+def test_capture_text_decodes_utf8(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Non-ASCII bytes round-trip through UTF-8 decode."""
+
+    def fake_get(_url: str, **_kwargs: object) -> MagicMock:
+        m = MagicMock(status_code=200)
+        m.content = b"caf\xc3\xa9"  # "café" in UTF-8
+        return m
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.requests.get",
+        fake_get,
+    )
+    text = ScreenshotClient(_mock_pikvm()).capture_text()
+    assert text == "café"
+
+
+def test_capture_text_replaces_invalid_utf8(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Invalid UTF-8 bytes are replaced rather than raising."""
+
+    def fake_get(_url: str, **_kwargs: object) -> MagicMock:
+        m = MagicMock(status_code=200)
+        m.content = b"valid\xff\xfeinvalid"
+        return m
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.requests.get",
+        fake_get,
+    )
+    text = ScreenshotClient(_mock_pikvm()).capture_text()
+    assert "valid" in text
+    assert "invalid" in text
+    # \xff\xfe gets replaced with U+FFFD — text should not raise
+
+
 def test_wait_for_text_matches_immediately(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
