@@ -12,6 +12,8 @@ from pikvm_auto._internal.commands.screenshot import (
 )
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     import pytest
 
 
@@ -112,3 +114,46 @@ def test_capture_with_ocr_flag_passes_param(
 
     ScreenshotClient(_mock_pikvm()).capture(ocr=True)
     assert captured["params"]["ocr"] == "true"
+
+
+def test_capture_to_writes_file(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """capture_to() writes the response body to the target path."""
+
+    def fake_get(_url: str, **_kwargs: object) -> MagicMock:
+        m = MagicMock(status_code=200)
+        m.content = b"jpeg data"
+        return m
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.requests.get",
+        fake_get,
+    )
+
+    out = ScreenshotClient(_mock_pikvm()).capture_to(tmp_path / "snap.jpeg")
+    assert out == tmp_path / "snap.jpeg"
+    assert (tmp_path / "snap.jpeg").read_bytes() == b"jpeg data"
+
+
+def test_capture_to_creates_parent_dirs(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """capture_to() creates missing parent directories."""
+
+    def fake_get(_url: str, **_kwargs: object) -> MagicMock:
+        m = MagicMock(status_code=200)
+        m.content = b"jpeg data"
+        return m
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.screenshot.requests.get",
+        fake_get,
+    )
+
+    out = ScreenshotClient(_mock_pikvm()).capture_to(
+        tmp_path / "nested/dir/snap.jpeg",
+    )
+    assert out.exists()

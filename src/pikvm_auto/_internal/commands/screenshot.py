@@ -17,13 +17,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import TYPE_CHECKING
 
 import requests
 
 if TYPE_CHECKING:
-    from pathlib import Path
-
     from pikvm_lib.pikvm import PiKVM
 
 try:
@@ -123,3 +122,13 @@ class ScreenshotClient:
         )
         resp.raise_for_status()
         return resp.content
+
+    def capture_to(self, path: Path | str) -> Path:
+        """Capture and save to disk. Returns the resolved ``Path``.
+
+        Missing parent directories are created automatically.
+        """
+        p = Path(path)
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_bytes(self.capture())
+        return p
