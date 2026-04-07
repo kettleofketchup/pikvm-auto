@@ -229,3 +229,30 @@ class HIDClient:
             verify=self._verify,
             timeout=30,
         )
+
+    def play(self, actions: list[HIDAction]) -> None:
+        """Execute a sequence of HID actions in order.
+
+        Each action is dispatched by ``kind``:
+          - ``"wait"`` → ``time.sleep(a.seconds or 0)``
+          - ``"key"`` → ``self.tap(a.key)`` (requires ``a.key``)
+          - ``"shortcut"`` → ``self.shortcut(a.keys)`` (requires ``a.keys``)
+          - ``"text"`` → ``self.type_text(a.text)`` (requires ``a.text``)
+        """
+        for a in actions:
+            if a.kind == "wait":
+                time.sleep(a.seconds or 0)
+            elif a.kind == "key":
+                if a.key is None:
+                    raise ValueError("HIDAction(kind='key') requires 'key'")
+                self.tap(a.key)
+            elif a.kind == "shortcut":
+                if a.keys is None:
+                    raise ValueError("HIDAction(kind='shortcut') requires 'keys'")
+                self.shortcut(a.keys)
+            elif a.kind == "text":
+                if a.text is None:
+                    raise ValueError("HIDAction(kind='text') requires 'text'")
+                self.type_text(a.text)
+            else:
+                raise ValueError(f"unknown HIDAction kind: {a.kind!r}")

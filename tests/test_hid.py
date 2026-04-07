@@ -200,3 +200,52 @@ def test_type_text_slow_mode(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     HIDClient(pk).type_text("Hi", slow=True)
     assert captured["params"]["slow"] == "true"
+
+
+def test_play_executes_mixed_sequence(monkeypatch: pytest.MonkeyPatch) -> None:
+    """HIDClient.play executes waits and keys in order."""
+    pk = _mock_pikvm()
+    posts: list[tuple[str, dict]] = []
+    sleep_calls: list[float] = []
+
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.hid.requests.post",
+        lambda url, **kw: posts.append((url, kw)) or MagicMock(status_code=200),
+    )
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.hid.time.sleep",
+        lambda s: sleep_calls.append(s),
+    )
+
+    actions = [
+        HIDAction(kind="wait", seconds=1.0),
+        HIDAction(kind="key", key="F11"),
+        HIDAction(kind="wait", seconds=2.0),
+        HIDAction(kind="key", key="Enter"),
+        HIDAction(kind="key", key="down"),
+    ]
+    HIDClient(pk).play(actions)
+
+    assert sleep_calls == [1.0, 2.0]
+    # 3 keys × 2 POSTs each (press + release) = 6 posts
+    assert len(posts) == 6
+    assert posts[0][1]["params"] == {"key": "KeyF11", "state": "true"}
+    assert posts[1][1]["params"] == {"key": "KeyF11", "state": "false"}
+    assert posts[2][1]["params"] == {"key": "Enter", "state": "true"}
+    assert posts[3][1]["params"] == {"key": "Enter", "state": "false"}
+    assert posts[4][1]["params"] == {"key": "ArrowDown", "state": "true"}
+    assert posts[5][1]["params"] == {"key": "ArrowDown", "state": "false"}
+
+
+def test_play_rejects_unknown_kind(monkeypatch: pytest.MonkeyPatch) -> None:
+    """HIDClient.play raises ValueError on unknown action kinds."""
+    pk = _mock_pikvm()
+    monkeypatch.setattr(
+        "pikvm_auto._internal.commands.hid.requests.post",
+        lambda url, **kw: MagicMock(status_code=200),
+    )
+    # Bypass dataclass Literal typing at runtime.
+    bogus = HIDAction(kind="key")  # type: ignore[arg-type]
+    bogus.kind = "wiggle"  # type: ignore[assignment]
+    with pytest.raises(ValueError, match="unknown HIDAction kind"):
+        HIDClient(pk).play([bogus])
