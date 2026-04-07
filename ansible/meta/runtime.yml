@@ -1,3 +1,11 @@
 requires_ansible: ">=2.15.0"
 plugin_routing:
   modules: {}
+action_groups:
+  all:
+    - pikvm_atx
+    - pikvm_hid
+    - pikvm_info
+    - pikvm_msd
+    - pikvm_screen_wait
+    - pikvm_snapshot
