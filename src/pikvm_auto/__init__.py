@@ -25,3 +25,11 @@ __all__: list[str] = [
     "main",
     "run_info",
 ]
+
+from pikvm_auto._internal.commands.screenshot import (
+    ScreenMatch,
+    ScreenshotClient,
+    fuzzy_score,
+)
+
+__all__ += ["ScreenMatch", "ScreenshotClient", "fuzzy_score"]
