@@ -277,6 +277,14 @@ def actions_from_yaml(raw: list[dict]) -> list[HIDAction]:
         kind = item.get("kind")
         if kind not in _VALID_KINDS:
             raise ValueError(f"unknown HIDAction kind: {kind!r} (item {i})")
+        if kind == "key" and not item.get("key"):
+            raise ValueError(f"HIDAction kind=key requires 'key' (item {i})")
+        if kind == "shortcut" and not item.get("keys"):
+            raise ValueError(f"HIDAction kind=shortcut requires 'keys' (item {i})")
+        if kind == "text" and item.get("text") is None:
+            raise ValueError(f"HIDAction kind=text requires 'text' (item {i})")
+        if kind == "wait" and item.get("seconds") is None:
+            raise ValueError(f"HIDAction kind=wait requires 'seconds' (item {i})")
         out.append(
             HIDAction(
                 kind=kind,

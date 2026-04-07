@@ -278,6 +278,26 @@ def test_actions_from_yaml_rejects_unknown_kind() -> None:
         actions_from_yaml([{"kind": "wiggle"}])
 
 
+def test_actions_from_yaml_rejects_missing_key_for_key_kind():
+    with pytest.raises(ValueError, match="kind=key requires"):
+        actions_from_yaml([{"kind": "key"}])
+
+
+def test_actions_from_yaml_rejects_missing_keys_for_shortcut_kind():
+    with pytest.raises(ValueError, match="kind=shortcut requires"):
+        actions_from_yaml([{"kind": "shortcut"}])
+
+
+def test_actions_from_yaml_rejects_missing_text_for_text_kind():
+    with pytest.raises(ValueError, match="kind=text requires"):
+        actions_from_yaml([{"kind": "text"}])
+
+
+def test_actions_from_yaml_rejects_missing_seconds_for_wait_kind():
+    with pytest.raises(ValueError, match="kind=wait requires"):
+        actions_from_yaml([{"kind": "wait"}])
+
+
 def test_shortcut_rejects_empty_keys():
     pk = _mock_pikvm()
     with pytest.raises(ValueError, match="shortcut.*at least one"):
