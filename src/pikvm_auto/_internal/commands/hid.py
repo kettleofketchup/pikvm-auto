@@ -57,7 +57,7 @@ class HIDAction:
 # target the right-hand modifier.
 _KEY_ALIASES: dict[str, str] = {
     # Function keys F1..F12
-    **{f"f{i}": f"KeyF{i}" for i in range(1, 13)},
+    **{f"f{i}": f"F{i}" for i in range(1, 13)},
     # Arrow keys
     "up": "ArrowUp",
     "down": "ArrowDown",

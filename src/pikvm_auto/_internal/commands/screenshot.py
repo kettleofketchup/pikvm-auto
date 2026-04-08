@@ -113,6 +113,7 @@ class ScreenshotClient:
         kvmd OCR result); otherwise it is ``image/jpeg`` binary data.
         """
         params: dict[str, str] = {}
+        params["allow_offline"] = "1"
         if ocr:
             params["ocr"] = "true"
         resp = requests.get(
@@ -172,14 +173,20 @@ class ScreenshotClient:
 
         while True:
             attempt += 1
-            text = self.capture_text()
+            try:
+                text = self.capture_text()
+            except requests.RequestException:
+                text = ""
             score = fuzzy_score(expected, text, case_sensitive=case_sensitive)
 
             if capture_dir is not None:
                 stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
                 p = Path(capture_dir) / f"{stamp}-{attempt:03d}.jpeg"
-                self.capture_to(p)
-                captures.append(p)
+                try:
+                    self.capture_to(p)
+                    captures.append(p)
+                except requests.RequestException:
+                    pass
 
             if score >= threshold:
                 return ScreenMatch(
