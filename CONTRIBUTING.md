@@ -121,3 +121,18 @@ git push -f
 ```
 
 If this seems all too complicated, you can push or force-push each new commit, and we will squash them ourselves if needed, before merging.
+
+## GitLab tag releases to PyPI
+
+This repository includes a `.gitlab-ci.yml` pipeline that builds and uploads distributions to PyPI when a semantic-version tag is pushed (for example `0.1.0`).
+
+Configure this in your GitLab project before using it:
+
+1. In **Settings > CI/CD > Variables**, add `PYPI_API_TOKEN` with a PyPI token value (for example `pypi-...`).
+1. Mark the variable as **Protected** and **Masked**.
+1. Protect your release tags in **Settings > Repository > Protected tags**.
+
+The pipeline uses:
+
+- `build-dist`: `uv build` and `twine check`
+- `publish-pypi`: `twine upload dist/*` using `PYPI_API_TOKEN`
