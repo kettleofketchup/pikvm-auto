@@ -476,10 +476,8 @@ def main():
         }
 
         if failed:
-            module.fail_json(
-                msg=f"MSD verify failed: {'; '.join(failed)}",
-                **result,
-            )
+            result["msg"] = f"MSD verify failed: {'; '.join(failed)}"
+            module.fail_json(**result)
         else:
             result["msg"] = f"MSD verify passed: {', '.join(checks)}"
 
