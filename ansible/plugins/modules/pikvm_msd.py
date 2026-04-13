@@ -287,7 +287,12 @@ def main():
 
     drive = msd.get("drive", {})
     is_connected = drive.get("connected", False)
-    current_drive_image = drive.get("image") or None
+    # drive.image may be a string (older kvmd) or a dict with 'name' key (newer kvmd)
+    _raw_image = drive.get("image")
+    if isinstance(_raw_image, dict):
+        current_drive_image = _raw_image.get("name") or None
+    else:
+        current_drive_image = _raw_image or None
     storage_images = msd.get("storage", {}).get("images", {})
 
     # Preflight check for all mutating operations
