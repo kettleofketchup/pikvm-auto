@@ -209,11 +209,18 @@ def main():
 
         try:
             if module.params.get("image_url"):
-                client.msd_upload_remote(module.params["image_url"], image_name=image_name)
+                raw_url = module.params["image_url"]
+                result["debug_raw_url"] = raw_url
+                result["debug_image_name"] = image_name
+                client.msd_upload_remote(raw_url, image_name=image_name)
             elif module.params.get("image_path"):
                 client.msd_upload_file(module.params["image_path"], image_name=image_name)
         except Exception as e:
-            module.fail_json(msg=f"Upload failed: {e}")
+            module.fail_json(
+                msg=f"Upload failed: {e}",
+                debug_raw_url=module.params.get("image_url", ""),
+                debug_image_name=image_name,
+            )
 
         try:
             client.msd_set_params(image_name, cdrom=module.params["cdrom"])

@@ -57,6 +57,7 @@ class PiKVMModuleClient:
         # URL-encode the download URL so query params (e.g. ?pw=...)
         # are not split off as separate PiKVM API params.
         encoded_url = quote(url, safe="")
+        self._debug_info = {"raw_url": url, "encoded_url": encoded_url, "image_name": image_name}
         return self.client.upload_msd_remote(encoded_url, image_name=image_name)
 
     def msd_upload_file(self, filepath, image_name=None):
