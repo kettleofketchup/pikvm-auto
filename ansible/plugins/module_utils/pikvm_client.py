@@ -1,4 +1,5 @@
 from __future__ import annotations
+from urllib.parse import quote
 
 try:
     from pikvm_lib.pikvm import PiKVM
@@ -53,7 +54,10 @@ class PiKVMModuleClient:
         return self.client.click_atx_button(button)
 
     def msd_upload_remote(self, url, image_name=None):
-        return self.client.upload_msd_remote(url, image_name=image_name)
+        # URL-encode the download URL so query params (e.g. ?pw=...)
+        # are not split off as separate PiKVM API params.
+        encoded_url = quote(url, safe="")
+        return self.client.upload_msd_remote(encoded_url, image_name=image_name)
 
     def msd_upload_file(self, filepath, image_name=None):
         return self.client.upload_msd_image(filepath, image_name=image_name)
