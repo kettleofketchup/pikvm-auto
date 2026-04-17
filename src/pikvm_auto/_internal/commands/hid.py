@@ -137,6 +137,8 @@ def canonical_key(key: str) -> str:
 
     Raises ``ValueError`` if the key cannot be resolved.
     """
+    if isinstance(key, (int, float)):
+        key = str(int(key))
     if not isinstance(key, str) or not key:
         raise ValueError(f"unknown key: {key!r}")
 
