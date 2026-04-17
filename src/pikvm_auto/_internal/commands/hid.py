@@ -149,6 +149,14 @@ def canonical_key(key: str) -> str:
     if key.startswith(_CANONICAL_PREFIXES):
         return key
 
+    # Single letter → KeyX (e.g. "F" → "KeyF", "n" → "KeyN")
+    if len(key) == 1 and key.isalpha():
+        return f"Key{key.upper()}"
+
+    # Single digit → DigitX (e.g. "2" → "Digit2")
+    if len(key) == 1 and key.isdigit():
+        return f"Digit{key}"
+
     raise ValueError(f"unknown key: {key!r}")
 
 
