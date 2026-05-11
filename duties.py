@@ -70,8 +70,10 @@ def check_quality(ctx: Context) -> None:
 @duty(nofail=PY_VERSION == PY_DEV)
 def check_docs(ctx: Context) -> None:
     """Check if the documentation builds correctly."""
+    # `clean=True` is required: zensical 0.0.32's incremental build skips the
+    # mkdocstrings inventory pass, leaving site/objects.inv empty.
     ctx.run(
-        tools.zensical.build(strict=True),
+        tools.zensical.build(clean=True, strict=True),
         title=pyprefix("Building documentation"),
     )
 
