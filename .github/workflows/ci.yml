@@ -37,7 +37,6 @@ jobs:
         - "3.14"
 
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
     - name: Checkout
@@ -96,7 +95,6 @@ jobs:
         - lowest-direct
 
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
     - name: Checkout
