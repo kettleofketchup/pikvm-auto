@@ -11,5 +11,7 @@ import warnings
 # the warning suppressed so subsequent test-time imports hit the module
 # cache and never re-compile.
 with warnings.catch_warnings():
-    warnings.simplefilter("ignore", SyntaxWarning)
+    # Suppress both SyntaxWarning (Python 3.12+) and DeprecationWarning
+    # (Python 3.10/3.11) — the category for invalid string escapes changed.
+    warnings.simplefilter("ignore")
     import pikvm_lib.keymaps  # noqa: F401
