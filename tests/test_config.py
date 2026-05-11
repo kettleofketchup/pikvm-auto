@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 from pikvm_auto._internal.config import PiKVMSettings
 
+if TYPE_CHECKING:
+    import pytest
 
-def test_settings_from_env(monkeypatch) -> None:
+
+def test_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     """Settings load from PIKVM_ env vars."""
     monkeypatch.setenv("PIKVM_HOST", "192.168.1.100")
     monkeypatch.setenv("PIKVM_USER", "admin")
@@ -20,7 +24,7 @@ def test_settings_from_env(monkeypatch) -> None:
     assert settings.password == "secret"
 
 
-def test_settings_defaults(monkeypatch) -> None:
+def test_settings_defaults(monkeypatch: pytest.MonkeyPatch) -> None:
     """Settings have sensible defaults."""
     monkeypatch.delenv("PIKVM_HOST", raising=False)
     monkeypatch.delenv("PIKVM_USER", raising=False)
@@ -33,7 +37,7 @@ def test_settings_defaults(monkeypatch) -> None:
     assert settings.cert_trusted is False
 
 
-def test_settings_create_client(monkeypatch) -> None:
+def test_settings_create_client(monkeypatch: pytest.MonkeyPatch) -> None:
     """Settings can create a PiKVM client instance."""
     monkeypatch.delenv("PIKVM_HOST", raising=False)
     monkeypatch.delenv("PIKVM_USER", raising=False)

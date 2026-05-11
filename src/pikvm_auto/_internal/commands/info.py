@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+from typing import TYPE_CHECKING
 
-from pikvm_lib.pikvm import PiKVM
+if TYPE_CHECKING:
+    from pikvm_lib.pikvm import PiKVM
 
 
 def run_info(client: PiKVM) -> int:

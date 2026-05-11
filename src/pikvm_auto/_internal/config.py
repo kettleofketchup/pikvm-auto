@@ -35,9 +35,9 @@ class PiKVMSettings(BaseSettings):
         settings_cls: type[BaseSettings],
         init_settings: PydanticBaseSettingsSource,
         env_settings: PydanticBaseSettingsSource,
-        dotenv_settings: PydanticBaseSettingsSource,
-        file_secret_settings: PydanticBaseSettingsSource,
-        **kwargs: Any,
+        dotenv_settings: PydanticBaseSettingsSource,  # noqa: ARG003
+        file_secret_settings: PydanticBaseSettingsSource,  # noqa: ARG003
+        **kwargs: Any,  # noqa: ARG003
     ) -> tuple[PydanticBaseSettingsSource, ...]:
         """Customise settings sources to include TOML config file.
 
