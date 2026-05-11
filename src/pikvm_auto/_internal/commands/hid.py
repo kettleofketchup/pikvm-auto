@@ -130,10 +130,13 @@ def canonical_key(key: str) -> str:
     """Return the kvmd canonical code for ``key``.
 
     Lookup order:
-      1. Friendly alias (case-insensitive) — e.g. ``f11`` → ``KeyF11``.
+      1. Friendly alias (case-insensitive) — e.g. ``f11`` → ``F11``,
+         ``ctrl`` → ``ControlLeft``, ``down`` → ``ArrowDown``.
       2. Canonical passthrough — names with a known prefix (``Key*``,
          ``Arrow*``, ``Digit*``, ``Numpad*``) or known singles (``Enter``,
          ``ControlRight``, …) are returned unchanged.
+      3. Single letter/digit fallback — ``"n"`` → ``"KeyN"``,
+         ``"1"`` → ``"Digit1"``.
 
     Raises ``ValueError`` if the key cannot be resolved.
     """

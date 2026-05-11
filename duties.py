@@ -35,7 +35,11 @@ def pyprefix(title: str) -> str:
 def _get_changelog_version() -> str:
     changelog_version_re = re.compile(r"^## \[(\d+\.\d+\.\d+)\].*$")
     with Path(__file__).parent.joinpath("CHANGELOG.md").open("r", encoding="utf8") as file:
-        return next(filter(bool, map(changelog_version_re.match, file))).group(1)  # ty: ignore[invalid-argument-type]
+        for line in file:
+            match = changelog_version_re.match(line)
+            if match:
+                return match.group(1)
+    raise RuntimeError("no changelog version found in CHANGELOG.md")
 
 
 @duty

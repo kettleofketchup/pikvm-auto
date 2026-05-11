@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from unittest.mock import MagicMock
 
 import pytest
@@ -90,7 +90,7 @@ def test_capture_returns_bytes(monkeypatch: pytest.MonkeyPatch) -> None:
 
     assert data == b"\xff\xd8\xff\xe0fakejpeg"
     assert captured["url"] == "https://pikvm.local/api/streamer/snapshot"
-    assert captured["params"] == {}
+    assert captured["params"] == {"allow_offline": "1"}
     assert captured["headers"] == pk.headers
     assert captured["verify"] is False
     assert captured["timeout"] == 30
@@ -100,7 +100,7 @@ def test_capture_with_ocr_flag_passes_param(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """capture(ocr=True) sends ocr=true query param."""
-    captured: dict[str, object] = {}
+    captured: dict[str, Any] = {}
 
     def fake_get(_url: str, **kwargs: object) -> MagicMock:
         captured.update(kwargs)
@@ -162,7 +162,7 @@ def test_capture_to_creates_parent_dirs(
 
 def test_capture_text_uses_ocr(monkeypatch: pytest.MonkeyPatch) -> None:
     """capture_text() requests ocr=true and decodes to str."""
-    captured: dict[str, object] = {}
+    captured: dict[str, Any] = {}
 
     def fake_get(_url: str, **kwargs: object) -> MagicMock:
         captured.update(kwargs)

@@ -18,7 +18,7 @@ def test_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("PIKVM_PASSWORD", "secret")
     monkeypatch.delenv("PIKVM_SCHEMA", raising=False)
     monkeypatch.delenv("PIKVM_CERT_TRUSTED", raising=False)
-    settings = PiKVMSettings()
+    settings = PiKVMSettings()  # ty: ignore[missing-argument]
     assert settings.host == "192.168.1.100"
     assert settings.user == "admin"
     assert settings.password == "secret"

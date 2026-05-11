@@ -52,8 +52,8 @@ def test_hid_action_wait_kind() -> None:
 
 def test_canonical_key_friendly_aliases() -> None:
     """Friendly aliases map to kvmd canonical names (case-insensitive)."""
-    assert canonical_key("F11") == "KeyF11"
-    assert canonical_key("f11") == "KeyF11"
+    assert canonical_key("F11") == "F11"
+    assert canonical_key("f11") == "F11"
     assert canonical_key("down") == "ArrowDown"
     assert canonical_key("UP") == "ArrowUp"
     assert canonical_key("enter") == "Enter"
@@ -72,7 +72,7 @@ def test_canonical_key_friendly_aliases() -> None:
 
 def test_canonical_key_passthrough_canonical() -> None:
     """Already-canonical names pass through unchanged."""
-    assert canonical_key("KeyF11") == "KeyF11"
+    assert canonical_key("KeyA") == "KeyA"
     assert canonical_key("ArrowDown") == "ArrowDown"
     assert canonical_key("Enter") == "Enter"
     assert canonical_key("ControlRight") == "ControlRight"
@@ -104,8 +104,8 @@ def test_tap_sends_key_event_to_kvmd(monkeypatch: pytest.MonkeyPatch) -> None:
     url2, kw2 = posts[1]
     assert url1 == "https://pikvm.local/api/hid/events/send_key"
     assert url2 == "https://pikvm.local/api/hid/events/send_key"
-    assert kw1["params"] == {"key": "KeyF11", "state": "true"}
-    assert kw2["params"] == {"key": "KeyF11", "state": "false"}
+    assert kw1["params"] == {"key": "F11", "state": "true"}
+    assert kw2["params"] == {"key": "F11", "state": "false"}
     assert kw1["headers"] == {"X-KVMD-User": "admin", "X-KVMD-Passwd": "admin"}
     assert kw1["verify"] is False
     assert kw1["timeout"] == 10
@@ -142,8 +142,8 @@ def test_press_holds_for_configured_duration(monkeypatch: pytest.MonkeyPatch) ->
 
     assert sleep_calls == [0.2]
     assert len(posts) == 2
-    assert posts[0][1]["params"] == {"key": "KeyF11", "state": "true"}
-    assert posts[1][1]["params"] == {"key": "KeyF11", "state": "false"}
+    assert posts[0][1]["params"] == {"key": "F11", "state": "true"}
+    assert posts[1][1]["params"] == {"key": "F11", "state": "false"}
 
 
 def test_shortcut_calls_send_shortcut_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -172,7 +172,7 @@ def test_shortcut_canonicalizes_each_key(monkeypatch: pytest.MonkeyPatch) -> Non
         lambda url, **kw: captured.update(kw) or MagicMock(status_code=200),
     )
     HIDClient(pk).shortcut(["meta", "F11"])
-    assert captured["params"]["keys"] == "MetaLeft,KeyF11"
+    assert captured["params"]["keys"] == "MetaLeft,F11"
 
 
 def test_type_text_calls_print_endpoint(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -235,8 +235,8 @@ def test_play_executes_mixed_sequence(monkeypatch: pytest.MonkeyPatch) -> None:
     assert sleep_calls == [1.0, 2.0]
     # 3 keys x 2 POSTs each (press + release) = 6 posts
     assert len(posts) == 6
-    assert posts[0][1]["params"] == {"key": "KeyF11", "state": "true"}
-    assert posts[1][1]["params"] == {"key": "KeyF11", "state": "false"}
+    assert posts[0][1]["params"] == {"key": "F11", "state": "true"}
+    assert posts[1][1]["params"] == {"key": "F11", "state": "false"}
     assert posts[2][1]["params"] == {"key": "Enter", "state": "true"}
     assert posts[3][1]["params"] == {"key": "Enter", "state": "false"}
     assert posts[4][1]["params"] == {"key": "ArrowDown", "state": "true"}
@@ -252,7 +252,7 @@ def test_play_rejects_unknown_kind(monkeypatch: pytest.MonkeyPatch) -> None:
     )
     # Bypass dataclass Literal typing at runtime.
     bogus = HIDAction(kind="key")  # type: ignore[arg-type]
-    bogus.kind = "wiggle"  # type: ignore[assignment]
+    bogus.kind = "wiggle"  # type: ignore[assignment]  # ty: ignore[invalid-assignment]
     with pytest.raises(ValueError, match="unknown HIDAction kind"):
         HIDClient(pk).play([bogus])
 
