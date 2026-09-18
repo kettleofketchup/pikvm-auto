@@ -67,17 +67,81 @@ def _run_module(params, msd_state=None, check_mode=False):
         return mock_module, mock_client
 
 
+def _uploaded(name="test.iso", size=1000000, complete=True):
+    """MSD state as kvmd reports it once an upload has landed."""
+    return {
+        **MSD_EMPTY,
+        "storage": {**MSD_EMPTY["storage"], "images": {name: {"size": size, "complete": complete}}},
+    }
+
+
+def _run_upload(params, after):
+    """Run state=present where the first state read is empty and every later read is `after`.
+
+    The module reads MSD state before deciding to upload and again afterwards to
+    prove the image landed; the second read is what the module must judge on.
+    """
+    with patch("ansible_collections.kettleofketchup.pikvm.plugins.modules.pikvm_msd.AnsibleModule") as mock_am, \
+         patch("ansible_collections.kettleofketchup.pikvm.plugins.modules.pikvm_msd.PiKVMModuleClient") as mock_client_cls:
+        mock_module = MagicMock()
+        mock_module.params = {
+            "pikvm_host": "10.0.0.1", "pikvm_user": "admin", "pikvm_passwd": "secret",
+            "pikvm_totp_secret": None, "pikvm_verify_ssl": False,
+            "state": "present", "image": None, "image_url": None, "image_path": None,
+            "cdrom": True, "wait": True, "timeout": 600, "expected_size": 0,
+            **params,
+        }
+        mock_module.check_mode = False
+        mock_module._diff = False
+        mock_am.return_value = mock_module
+        mock_client = MagicMock()
+        mock_client.get_msd_state.side_effect = lambda: after if mock_client.get_msd_state.call_count > 1 else MSD_EMPTY
+        mock_client_cls.return_value = mock_client
+        main()
+        return mock_module, mock_client
+
+
 def test_present_uploads_remote():
-    """MSD present with image_url triggers remote upload."""
-    module, client = _run_module({"state": "present", "image_url": "http://example.com/test.iso"})
+    """MSD present with image_url triggers remote upload and reports the observed size."""
+    module, client = _run_upload({"image_url": "http://example.com/test.iso"}, _uploaded())
     client.msd_upload_remote.assert_called_once()
+    module.fail_json.assert_not_called()
     assert module.exit_json.call_args[1]["changed"] is True
+    assert module.exit_json.call_args[1]["upload"]["size_bytes"] == 1000000
+
+
+def test_present_fails_when_image_absent_after_upload():
+    """The upload call returning is not proof: kvmd may have rejected the write.
+
+    This is the failure that produced a multi-gigabyte upload "completing" in
+    0.4s — the remote host was unresolvable, kvmd stored nothing, and the module
+    substituted the expected size. It must fail, naming the missing image.
+    """
+    module, client = _run_upload({"image_url": "http://example.com/test.iso"}, MSD_EMPTY)
+    client.msd_upload_remote.assert_called_once()
+    module.fail_json.assert_called_once()
+    assert "not in MSD storage" in module.fail_json.call_args[1]["msg"]
+
+
+def test_present_fails_when_image_incomplete_after_upload():
+    module, _ = _run_upload({"image_url": "http://example.com/test.iso"}, _uploaded(complete=False))
+    module.fail_json.assert_called_once()
+    assert "incomplete" in module.fail_json.call_args[1]["msg"]
+
+
+def test_present_fails_when_uploaded_size_differs_from_expected():
+    module, _ = _run_upload(
+        {"image_url": "http://example.com/test.iso", "expected_size": 2000000}, _uploaded(size=1000000)
+    )
+    module.fail_json.assert_called_once()
+    assert "expected 2000000" in module.fail_json.call_args[1]["msg"]
 
 
 def test_present_uploads_local_file():
     """MSD present with image_path triggers local file upload."""
-    module, client = _run_module({"state": "present", "image_path": "/tmp/test.iso"})
+    module, client = _run_upload({"image_path": "/tmp/test.iso"}, _uploaded())
     client.msd_upload_file.assert_called_once()
+    module.fail_json.assert_not_called()
     assert module.exit_json.call_args[1]["changed"] is True
 
 

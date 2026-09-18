@@ -355,13 +355,37 @@ def main():
         except Exception as e:
             module.fail_json(msg=f"Failed to set MSD params: {e}")
 
-        # Determine uploaded size from refreshed state
+        # Prove the image is actually on the MSD before reporting success. The
+        # upload call returning is not that proof: if kvmd rejected the write
+        # (e.g. it could not resolve the remote host), nothing was stored, and
+        # substituting the expected size here would report a multi-gigabyte
+        # upload completing in a fraction of a second — which is exactly how
+        # this used to fail. Only the observed size is ever reported.
         try:
             msd_after = client.get_msd_state()
-            uploaded_image = msd_after.get("storage", {}).get("images", {}).get(image_name, {})
-            upload_size = uploaded_image.get("size", expected_size or 0)
-        except Exception:
-            upload_size = expected_size or 0
+        except Exception as e:
+            module.fail_json(msg=f"Upload of {image_name} returned, but the MSD state could not be read afterwards: {e}")
+            return
+        uploaded_image = msd_after.get("storage", {}).get("images", {}).get(image_name)
+        if not uploaded_image:
+            module.fail_json(
+                msg=f"Upload of {image_name} returned without error, but the image is not in MSD storage; "
+                    "kvmd rejected or abandoned the write"
+            )
+            return
+        if not uploaded_image.get("complete", False):
+            module.fail_json(
+                msg=f"Upload of {image_name} returned, but the image is marked incomplete on the MSD "
+                    f"({uploaded_image.get('size', 0)} bytes stored)"
+            )
+            return
+        if expected_size and not _size_matches(uploaded_image, expected_size):
+            module.fail_json(
+                msg=f"Upload of {image_name} completed at {uploaded_image.get('size')} bytes, "
+                    f"expected {expected_size}"
+            )
+            return
+        upload_size = uploaded_image.get("size", 0)
 
         result["image"] = {"name": image_name}
         result["upload"] = _upload_throughput(t_elapsed, upload_size)
