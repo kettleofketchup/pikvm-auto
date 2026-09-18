@@ -13,6 +13,7 @@ ignore = [
     "ANN401",  # Dynamically typed expressions (typing.Any) are disallowed
     "ARG005",  # Unused lambda argument
     "C901",  # Too complex
+    "CPY001",  # Missing copyright notice (stable since ruff 0.16; the LICENSE file is the notice, no per-file headers here)
     "D105",  # Missing docstring in magic method
     "D417",  # Missing argument description in the docstring
     "E501",  # Line too long
