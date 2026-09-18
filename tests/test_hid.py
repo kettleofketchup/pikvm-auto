@@ -331,7 +331,8 @@ def test_tap_raises_on_http_error(monkeypatch: pytest.MonkeyPatch) -> None:
         return resp
 
     monkeypatch.setattr(
-        "pikvm_auto._internal.commands.hid.requests.post", fake_post,
+        "pikvm_auto._internal.commands.hid.requests.post",
+        fake_post,
     )
 
     with pytest.raises(requests.HTTPError, match="401"):
