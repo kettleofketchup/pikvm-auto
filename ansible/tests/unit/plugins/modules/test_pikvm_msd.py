@@ -124,13 +124,13 @@ def test_present_fails_when_image_absent_after_upload():
 
 
 def test_present_fails_when_image_incomplete_after_upload():
-    module, _ = _run_upload({"image_url": "http://example.com/test.iso"}, _uploaded(complete=False))
+    module, _client = _run_upload({"image_url": "http://example.com/test.iso"}, _uploaded(complete=False))
     module.fail_json.assert_called_once()
     assert "incomplete" in module.fail_json.call_args[1]["msg"]
 
 
 def test_present_fails_when_uploaded_size_differs_from_expected():
-    module, _ = _run_upload(
+    module, _client = _run_upload(
         {"image_url": "http://example.com/test.iso", "expected_size": 2000000}, _uploaded(size=1000000)
     )
     module.fail_json.assert_called_once()

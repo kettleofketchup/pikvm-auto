@@ -44,7 +44,7 @@ def test_passwd_is_no_log():
 def test_client_creates_pikvm_instance(mock_pikvm):
     """Client creates a PiKVM instance with correct params."""
     module = _make_module()
-    client = PiKVMModuleClient(module)
+    PiKVMModuleClient(module)
     mock_pikvm.assert_called_once_with(
         hostname="10.0.0.1",
         username="admin",
@@ -93,7 +93,7 @@ def test_checked_post_returns_response_on_2xx():
 
 def test_checked_post_raises_with_kvmd_error_msg():
     """The message kvmd gives is the one the operator needs — surface it verbatim."""
-    client, _ = _client_with_post(
+    client, _resp = _client_with_post(
         400, {"ok": False, "result": {"error": "MsdUnknownImageError", "error_msg": "The image is not found in the storage"}}
     )
     with pytest.raises(RuntimeError) as exc:
@@ -103,7 +103,7 @@ def test_checked_post_raises_with_kvmd_error_msg():
 
 
 def test_checked_post_raises_without_json_body():
-    client, _ = _client_with_post(500, None, text="upstream gone")
+    client, _resp = _client_with_post(500, None, text="upstream gone")
     with pytest.raises(RuntimeError) as exc:
         client.msd_connect()
     assert "HTTP 500" in str(exc.value)
@@ -112,7 +112,7 @@ def test_checked_post_raises_without_json_body():
 
 def test_msd_upload_remote_encodes_url_and_names_image():
     """Query params in the download URL must reach kvmd as part of the url value, not as kvmd params."""
-    client, _ = _client_with_post(200, {"ok": True, "result": {}})
+    client, _resp = _client_with_post(200, {"ok": True, "result": {}})
     client.msd_upload_remote("http://files.example.test/a.iso?token=x", image_name="a.iso")
     path, kwargs = client.client._post.call_args[0][0], client.client._post.call_args[1]
     assert path == "/api/msd/write_remote"
@@ -121,7 +121,7 @@ def test_msd_upload_remote_encodes_url_and_names_image():
 
 def test_msd_upload_remote_raises_when_kvmd_cannot_fetch():
     """An unresolvable remote host is a failed upload, not a 0.4s success."""
-    client, _ = _client_with_post(
+    client, _resp = _client_with_post(
         400, {"ok": False, "result": {"error": "ClientConnectorDNSError", "error_msg": "Cannot connect to host files.example.test:80"}}
     )
     with pytest.raises(RuntimeError) as exc:
@@ -130,7 +130,7 @@ def test_msd_upload_remote_raises_when_kvmd_cannot_fetch():
 
 
 def test_msd_connect_and_disconnect_use_set_connected():
-    client, _ = _client_with_post(200, {"ok": True, "result": {}})
+    client, _resp = _client_with_post(200, {"ok": True, "result": {}})
     client.msd_connect()
     client.msd_disconnect()
     calls = [(c[0][0], c[1]["options"]) for c in client.client._post.call_args_list]
